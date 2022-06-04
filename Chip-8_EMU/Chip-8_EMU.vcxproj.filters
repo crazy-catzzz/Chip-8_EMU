@@ -21,9 +21,15 @@
     <ClCompile Include="chip8.cpp">
       <Filter>File di risorse</Filter>
     </ClCompile>
+    <ClCompile Include="rom.cpp">
+      <Filter>File di risorse</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="chip8.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="rom.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>

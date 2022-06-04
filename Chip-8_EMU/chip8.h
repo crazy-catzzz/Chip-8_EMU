@@ -47,6 +47,7 @@ struct chip8 {
 
 	bool on;
 	unsigned char currentKey;
+	bool keyPressed;
 
 	/* BACKWARDS COMPATIBILITY */
 	int oldStartMem = 512;		// To run older Chip-8 ROMs
@@ -55,3 +56,19 @@ struct chip8 {
 void chip8_fetch(chip8& chip8);
 void chip8_decode(chip8& chip8);
 void chip8_execute(chip8& chip8);
+void chip8_getKey(chip8& chip8);
+
+
+// OPCODES
+void chip8_clearScr(chip8& chip8);
+void chip8_return(chip8& chip8);
+void chip8_jmp(chip8& chip8, unsigned char nnn);
+void chip8_call(chip8& chip8, unsigned char nnn);
+void chip8_cmpRegSkip_eq(chip8& chip8, unsigned char x, unsigned char nn);
+void chip8_cmpRegSkip_neq(chip8& chip8, unsigned char x, unsigned char nn);
+void chip8_cmpRegSkip_eq_XY(chip8& chip8, unsigned char x, unsigned char y);
+void chip8_setReg(chip8& chip8, unsigned char x, unsigned char nn);
+void chip8_addToReg(chip8& chip8, unsigned char x, unsigned char nn);
+void chip8_setToReg(chip8& chip8, unsigned char x, unsigned char y);
+void chip8_regOr(chip8& chip8, unsigned char x, unsigned char y);
+void chip8_regAnd(chip8& chip8, unsigned char x, unsigned char y);
