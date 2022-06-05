@@ -104,13 +104,13 @@ int main(int argc, char** argv) {
 		
 		unsigned short opcode = currentInstruction[0] << 8 | currentInstruction[1];
 
-		cout << "PC: " << chip8.pc << endl;
+		//cout << "PC: " << chip8.pc << endl;
 		
 		chip8.pc += 2;
 
-		cout << "Current opcode: ";
-		cout << (void *)opcode;
-		cout << endl;
+		//cout << "Current opcode: ";
+		//cout << (void *)opcode;
+		//cout << endl;
 
 		unsigned char x = (opcode & 0x0F00) >> 8;
 		unsigned char y = (opcode & 0x00F0) >> 4;
