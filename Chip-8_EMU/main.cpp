@@ -10,13 +10,6 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
-	unsigned int xCoord;
-	unsigned int yCoord;
-	unsigned char spriteData;
-	unsigned char character;
-	unsigned char number;
-	unsigned char regNum;
-
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_Window* win;
 	SDL_CreateWindow("Chip-8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320, 160, SDL_WINDOW_OPENGL);
@@ -58,33 +51,44 @@ int main(int argc, char** argv) {
 
 	while (chip8.on == true) {
 
-		switch (SDL_PollEvent(&e)) {
-		case SDL_QUIT:
-			chip8.on = false;
-			break;
-		};
+		//system("cls");
+
+		while (SDL_PollEvent(&e)) {
+			switch (e.type) {
+			case SDL_QUIT:
+				chip8.on = false;
+				break;
+			};
+		}
 
 		// FETCH
 		currentInstruction[0] = chip8.memory[chip8.pc];		// Load current instruction from memory (1st Byte)
 		currentInstruction[1] = chip8.memory[chip8.pc + 1];	// Load current instruction from memory (2nd Byte)
 		
 		unsigned short opcode = currentInstruction[0] << 8 | currentInstruction[1];
+
+		cout << "PC: " << chip8.pc << endl;
 		
 		chip8.pc += 2;
 
-		cout << "PC: " << chip8.pc << endl;
-
 		cout << "Current opcode: ";
-		cout << (void *)((opcode & 0xF000) >> 12);
+		cout << (void *)opcode;
 		cout << endl;
 
 		unsigned char x = (opcode & 0x0F00) >> 8;
 		unsigned char y = (opcode & 0x00F0) >> 4;
 		unsigned char n = (opcode & 0x000F);
 		unsigned char nn = (opcode & 0x00FF);
-		unsigned char nnn = (opcode & 0x0FFF);
+		unsigned short nnn = (opcode & 0x0FFF);
 
-		switch ((opcode & 0xF000) >> 12) {
+		cout << "X: " << (void *)x << endl;
+		cout << "Y: " << (void *)y << endl;
+		cout << "N: " << (void *)n << endl;
+		cout << "NN: " << (void *)nn << endl;
+		cout << "NNN: " << (void *)nnn << endl;
+
+		// DECODE
+		switch ((opcode & 0xF000) >> 12) { // EXECUTE
 		case 0x0:
 			switch (n) {
 			case 0x0:
@@ -127,139 +131,77 @@ int main(int argc, char** argv) {
 			case 0x2:
 				chip8_regAnd(chip8, x, y);
 				break;
-			}
-		case 0x9:
-		case 0xA:
-		case 0xB:
-		case 0xC:
-		case 0xD:
-		case 0xE:
-		case 0xF:
-		}
-
-		// DECODE
-		switch (currentInstruction[0] >> 4) { // EXECUTE
-		case 0x8:
-			switch (currentInstruction[1] << 4) {
-			case 0x1:
-				chip8.variableRegisters[currentInstruction[0] << 4] |= chip8.variableRegisters[currentInstruction[1] >> 4];
-				break;
-			case 0x2:
-				chip8.variableRegisters[currentInstruction[0] << 4] &= chip8.variableRegisters[currentInstruction[1] >> 4];
-				break;
 			case 0x3:
-				chip8.variableRegisters[currentInstruction[0] << 4] ^= chip8.variableRegisters[currentInstruction[1] >> 4];
+				chip8_regXor(chip8, x, y);
 				break;
 			case 0x4:
-				chip8.variableRegisters[currentInstruction[0] << 4] += chip8.variableRegisters[currentInstruction[1] >> 4];
+				chip8_regSum(chip8, x, y);
 				break;
 			case 0x5:
-				chip8.variableRegisters[currentInstruction[0] << 4] -= chip8.variableRegisters[currentInstruction[1] >> 4];
+				chip8_regDiff_XY(chip8, x, y);
 				break;
 			case 0x6:
-				chip8.variableRegisters[currentInstruction[0] << 4] = chip8.variableRegisters[currentInstruction[1] >> 4];
-				chip8.variableRegisters[0xF] = chip8.variableRegisters[currentInstruction[0] << 4] >> 7;
-				chip8.variableRegisters[currentInstruction[0] << 4] <<= 1;
+				chip8_regShift_right(chip8, x, y);
 				break;
 			case 0x7:
-				chip8.variableRegisters[currentInstruction[1] << 4] = chip8.variableRegisters[currentInstruction[0] >> 4] - chip8.variableRegisters[currentInstruction[1] << 4];
-				break;
+				chip8_regDiff_YX(chip8, x, y);
 			case 0xE:
-				chip8.variableRegisters[currentInstruction[0] << 4] = chip8.variableRegisters[currentInstruction[1] >> 4];
-				chip8.variableRegisters[0xF] = chip8.variableRegisters[currentInstruction[0] << 4] << 7;
-				chip8.variableRegisters[currentInstruction[0] << 4] >>= 1;
+				chip8_regShift_left(chip8, x, y);
 				break;
 			}
 		case 0x9:
-			if (currentInstruction[1] << 4 == 0x0)
-				if (chip8.variableRegisters[currentInstruction[0] << 4] != chip8.variableRegisters[currentInstruction[1] >> 4])
-					chip8.pc += 2;
+			if (n == 0x0) chip8_skipNeq(chip8, x, y);
 			break;
 		case 0xA:
-			chip8.iRegister = currentInstruction[0] << 4 | currentInstruction[1];
+			chip8_setIReg(chip8, nnn);
 			break;
 		case 0xB:
-			chip8.pc = (currentInstruction[0] << 4 | currentInstruction[1]) + chip8.variableRegisters[0x0];
+			chip8_jmpV0(chip8, x, nnn);
 			break;
 		case 0xC:
-			chip8.variableRegisters[currentInstruction[0] << 4] = (unsigned char)(rand() % 255) & currentInstruction[1];
+			chip8_rand(chip8, x, nn);
 			break;
 		case 0xD:
-			xCoord = chip8.variableRegisters[currentInstruction[0] << 4] & 63;
-			yCoord = chip8.variableRegisters[currentInstruction[1] >> 4] & 31;
-			chip8.variableRegisters[0xF] = 0x00;
-
-			for (int i = 0; i < currentInstruction[1] << 4; i++) {
-				if (yCoord >= 32) break;
-				spriteData = chip8.memory[chip8.iRegister + i];
-				for (int j = 0; j < 8; j++) {
-					if (xCoord >= 64) break;
-					if (spriteData >> 8 - j << j == true && chip8.display[xCoord][yCoord] == true) {
-						chip8.display[xCoord][yCoord] = false;
-						chip8.variableRegisters[0xF] = true;
-					}
-					else if (spriteData >> 8 - j << j == true && chip8.display[xCoord][yCoord] == false) {
-						chip8.display[xCoord][yCoord] = true;
-					}
-					xCoord++;
-				}
-				yCoord++;
-			}
-			break;
+			chip8_display(chip8, x, y, n);
 		case 0xE:
-			switch (currentInstruction[1]) {
+			switch (nn) {
 			case 0x9E:
-				if (chip8.currentKey == chip8.variableRegisters[currentInstruction[0] << 4]) chip8.pc += 2;
+				chip8_skipKeyPressed(chip8, x);
 				break;
 			case 0xA1:
-				if (chip8.currentKey != chip8.variableRegisters[currentInstruction[0] << 4]) chip8.pc += 2;
+				chip8_skipKeyNotPressed(chip8, x);
 				break;
 			}
-			break;
 		case 0xF:
-			switch (currentInstruction[1]) {
+			switch (nn) {
 			case 0x07:
-				chip8.variableRegisters[currentInstruction[0] << 4] = chip8.delayTimer;
+				chip8_setRegToDelayTimer(chip8, x);
 				break;
 			case 0x15:
-				chip8.delayTimer = chip8.variableRegisters[currentInstruction[0] << 4];
+				chip8_setDelayTimer(chip8, x);
 				break;
 			case 0x18:
-				chip8.soundTimer = chip8.variableRegisters[currentInstruction[0] << 4];
+				chip8_setSoundTimer(chip8, x);
 				break;
 			case 0x1E:
-				chip8.iRegister += chip8.variableRegisters[currentInstruction[0] << 4];
+				chip8_addToIReg(chip8, x);
 				break;
 			case 0x0A:
-				chip8.pc -= 2;
-				if (chip8.keyPressed == true) chip8.pc += 2;
+				chip8_waitForKey(chip8);
 				break;
 			case 0x29:
-				character = chip8.variableRegisters[currentInstruction[0] << 4] << 4;
-				for (int i = 0; i < 0xF; i++) {
-					if (character == i) chip8.iRegister = 5 * i;
-				}
+				chip8_fontCharacter(chip8, x);
 				break;
 			case 0x33:
-				number = chip8.variableRegisters[currentInstruction[0] << 4];
-				for (int i = 0; i < 3; i++) {
-					chip8.memory[chip8.iRegister + i] = (number / (unsigned char)pow(10, 2 - i)) % 10;
-				}
+				chip8_toBCD(chip8, x);
 				break;
 			case 0x55:
-				regNum = currentInstruction[0] << 4;
-				for (int i = 0; i <= regNum; i++) {
-					chip8.memory[chip8.iRegister + i] = chip8.variableRegisters[i];
-				}
+				chip8_regToMem(chip8, x);
 				break;
 			case 0x65:
-				regNum = currentInstruction[0] << 4;
-				for (int i = 0; i <= regNum; i++) {
-					chip8.variableRegisters[i] = chip8.memory[chip8.iRegister + i];
-				}
+				chip8_memToReg(chip8, x);
 				break;
 			}
-			break;
 		}
 
 		// INPUT
@@ -267,9 +209,13 @@ int main(int argc, char** argv) {
 
 		// RENDERING
 		// TODO: Use SDL to render stuff
-		
-
-		//chip8.on = false;
+		/*for (int i = 0; i < 64; i++) {
+			for (int j = 0; j < 32; j++) {
+				if (chip8.display[i][j] == true) cout << '0';
+				else if (chip8.display[i][j] == false) cout << 'e';
+			}
+			cout << endl;
+		}*/
 	}
 
 	SDL_Quit();
