@@ -24,7 +24,7 @@ struct chip8 {
 
 	unsigned char variableRegisters[16];	// 16 8-bit variable registers
 
-	bool display[64][32];		// 64x32 display
+	bool display[32 * 64];		// 64x32 display
 
 	unsigned char fontTable[16][5] = {
 		{ 0xf0, 0x90, 0x90, 0x90, 0xf0 },	// 0
@@ -82,7 +82,7 @@ void chip8_skipNeq(chip8& chip8, unsigned char x, unsigned char y);
 void chip8_setIReg(chip8& chip8, unsigned short nnn);
 void chip8_jmpV0(chip8& chip8, unsigned char x, unsigned short nnn);
 void chip8_rand(chip8& chip8, unsigned char x, unsigned char nn);
-void chip8_display(chip8& chip8, unsigned char x, unsigned char y, unsigned char n);
+void chip8_drawSprite(chip8& chip8, unsigned char x, unsigned char y, unsigned char n);
 void chip8_skipKeyPressed(chip8& chip8, unsigned char x);
 void chip8_skipKeyNotPressed(chip8& chip8, unsigned char x);
 void chip8_setRegToDelayTimer(chip8& chip8, unsigned char x);

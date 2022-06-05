@@ -1,12 +1,16 @@
 #include "chip8.h"
 
 #include <stdlib.h>
+#include <iostream>
+
+using namespace std;
 
 void chip8_clearScr(chip8& chip8) {
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 32; j++) {
-			chip8.display[i][j] = false;
+			chip8.display[j * 64 + i] = false;
 		}
+		
 	}
 }
 
@@ -65,16 +69,20 @@ void chip8_regSum(chip8& chip8, unsigned char x, unsigned char y) {
 }
 
 void chip8_regDiff_XY(chip8& chip8, unsigned char x, unsigned char y) {
+	if (chip8.variableRegisters[x] > chip8.variableRegisters[y]) chip8.variableRegisters[0xF] = 0b1;
+	else chip8.variableRegisters[0xF] = 0b0;
 	chip8.variableRegisters[x] -= chip8.variableRegisters[y];
 }
 
 void chip8_regDiff_YX(chip8& chip8, unsigned char x, unsigned char y) {
+	if (chip8.variableRegisters[x] > chip8.variableRegisters[y]) chip8.variableRegisters[0xF] = 0b1;
+	else chip8.variableRegisters[0xF] = 0b0;
 	chip8.variableRegisters[x] = chip8.variableRegisters[x] - chip8.variableRegisters[y];
 }
 
 void chip8_regShift_right(chip8& chip8, unsigned char x, unsigned char y) {
 	//chip8.variableRegisters[x] = chip8.variableRegisters[y];
-	chip8.variableRegisters[0xF] = (chip8.variableRegisters[x] & 0b00000001) << 7;
+	chip8.variableRegisters[0xF] = (chip8.variableRegisters[x] & 0b00000001);
 	chip8.variableRegisters[x] >>= 1;
 }
 
@@ -100,22 +108,24 @@ void chip8_rand(chip8& chip8, unsigned char x, unsigned char nn) {
 	chip8.variableRegisters[x] = (rand() % 255) & nn;
 }
 
-void chip8_display(chip8& chip8, unsigned char x, unsigned char y, unsigned char n) {
-	unsigned char xCoord = chip8.variableRegisters[x] & 63;
-	unsigned char yCoord = chip8.variableRegisters[y] & 31;
+void chip8_drawSprite(chip8& chip8, unsigned char x, unsigned char y, unsigned char n) {
+	unsigned char xCoord = chip8.variableRegisters[x] % 64;
+	unsigned char yCoord = chip8.variableRegisters[y] % 32;
+
 	chip8.variableRegisters[0xF] = 0x00;
 
 	for (int i = 0; i < n; i++) {
+		unsigned char spriteData = chip8.memory[chip8.iRegister + i];
 		if (yCoord < 32) {
-			unsigned char spriteData = chip8.memory[chip8.iRegister + i];
-			for (int j = 0; j < 8; j++) {
+			xCoord = chip8.variableRegisters[x] % 64;
+			for (unsigned int j = 1 << 7; j != 0; j >>= 1) {
 				if (xCoord < 64) {
-					if (spriteData >> 8 - j << j == true && chip8.display[xCoord][yCoord] == true) {
-						chip8.display[xCoord][yCoord] = false;
+					if (spriteData & j && chip8.display[yCoord * 64 + xCoord] == true) {
+						chip8.display[yCoord * 64 + xCoord] = 0b0;
 						chip8.variableRegisters[0xF] = true;
 					}
-					else if (spriteData >> 8 - j << j == true && chip8.display[xCoord][yCoord] == false) {
-						chip8.display[xCoord][yCoord] = true;
+					else if (spriteData & j && chip8.display[yCoord * 64 + xCoord] == false) {
+						chip8.display[yCoord * 64 + xCoord] = 0b1;
 					}
 					xCoord++;
 				}

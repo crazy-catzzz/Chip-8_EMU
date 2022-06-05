@@ -11,10 +11,15 @@ using namespace std;
 int main(int argc, char** argv) {
 
 	SDL_Init(SDL_INIT_EVERYTHING);
-	SDL_Window* win;
-	SDL_CreateWindow("Chip-8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320, 160, SDL_WINDOW_OPENGL);
+	SDL_Window* win = SDL_CreateWindow("Chip-8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, SDL_WINDOW_OPENGL);
+
+	SDL_Renderer* rend = SDL_CreateRenderer(win, -1, 0);
+	SDL_Texture* texture = SDL_CreateTexture(rend, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, 64, 32);
 
 	SDL_Event e;
+
+	Uint32* pixels = new Uint32[32 * 64];
+	memset(pixels, 0, 32 * 64 * sizeof(Uint32));
 
 	srand(time(NULL));
 
@@ -36,7 +41,7 @@ int main(int argc, char** argv) {
 
 	// LOAD ROM
 	ifstream rom;
-	rom.open("C:\\Users\\Davide\\Downloads\\IBM Logo.ch8", ofstream::binary);
+	rom.open("C:\\Users\\Davide\\Downloads\\test_opcode.ch8", ofstream::binary);
 	rom.seekg(0, rom.end);
 	unsigned short rLen = (unsigned short)rom.tellg();
 	rom.seekg(0, rom.beg);
@@ -45,13 +50,13 @@ int main(int argc, char** argv) {
 	rom.read(content, rLen);
 
 	memcpy(&chip8.memory[chip8.oldStartMem], content, rLen);
-	cout << "Loaded!";
+	cout << "Loaded!" << endl;
 
 	chip8.pc = chip8.oldStartMem;
 
 	while (chip8.on == true) {
 
-		//system("cls");
+		SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(Uint32));
 
 		while (SDL_PollEvent(&e)) {
 			switch (e.type) {
@@ -67,7 +72,7 @@ int main(int argc, char** argv) {
 		
 		unsigned short opcode = currentInstruction[0] << 8 | currentInstruction[1];
 
-		cout << "PC: " << chip8.pc << endl;
+		//cout << "PC: " << chip8.pc << endl;
 		
 		chip8.pc += 2;
 
@@ -162,7 +167,7 @@ int main(int argc, char** argv) {
 			chip8_rand(chip8, x, nn);
 			break;
 		case 0xD:
-			chip8_display(chip8, x, y, n);
+			chip8_drawSprite(chip8, x, y, n);
 		case 0xE:
 			switch (nn) {
 			case 0x9E:
@@ -209,15 +214,22 @@ int main(int argc, char** argv) {
 
 		// RENDERING
 		// TODO: Use SDL to render stuff
-		/*for (int i = 0; i < 64; i++) {
+
+		for (int i = 0; i < 64; i++) {
 			for (int j = 0; j < 32; j++) {
-				if (chip8.display[i][j] == true) cout << '0';
-				else if (chip8.display[i][j] == false) cout << 'e';
+				if (chip8.display[j * 64 + i] == true) pixels[j * 64 + i] = 255;
+				else if (chip8.display[j * 64 + i] == false) pixels[j * 64 + i] = 0;
 			}
-			cout << endl;
-		}*/
+		}
+
+		SDL_RenderClear(rend);
+		SDL_RenderCopy(rend, texture, NULL, NULL);
+		SDL_RenderPresent(rend);
 	}
 
+	delete[] pixels;
+	SDL_DestroyTexture(texture);
+	SDL_DestroyRenderer(rend);
 	SDL_Quit();
 
 	return 0;
