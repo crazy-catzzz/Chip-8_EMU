@@ -1,14 +1,20 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
-#include <fstream>
 #include <SDL.h>
 #include "chip8.h"
+#include "rom.h"
 
 using namespace std;
 
 int main(int argc, char** argv) {
+
+	if (argc < 2) {
+		cout << "E: No ROM specified!" << endl;
+		cout << "Usage: Chip-8_EMU.exe <rom_path>" << endl;
+		return 0;
+	}
+	string romPath = argv[1];
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_Window* win = SDL_CreateWindow("Chip-8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, SDL_WINDOW_OPENGL);
@@ -40,21 +46,17 @@ int main(int argc, char** argv) {
 	}
 
 	// LOAD ROM
-	ifstream rom;
-	rom.open("C:\\Users\\Davide\\Downloads\\test_opcode.ch8", ofstream::binary);
-	rom.seekg(0, rom.end);
-	unsigned short rLen = (unsigned short)rom.tellg();
-	rom.seekg(0, rom.beg);
-	char* content;
-	content = new char[rLen];
-	rom.read(content, rLen);
-
-	memcpy(&chip8.memory[chip8.oldStartMem], content, rLen);
+	cout << "Loading " << romPath << "... " << endl;
+	rom rom;
+	rom.filePath.open(romPath, ofstream::binary);
+	chip8_loadROM(chip8, rom);
 	cout << "Loaded!" << endl;
 
 	chip8.pc = chip8.oldStartMem;
 
 	while (chip8.on == true) {
+
+		//system("cls");
 
 		SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(Uint32));
 
@@ -63,8 +65,38 @@ int main(int argc, char** argv) {
 			case SDL_QUIT:
 				chip8.on = false;
 				break;
+			case SDL_KEYDOWN:
+				if (chip8_mapKey(e.key.keysym.sym) != -1) {
+					chip8.keyPressed = true;
+					chip8.pad[chip8_mapKey(e.key.keysym.sym)] = true;
+				}
+				break;
+			case SDL_KEYUP:
+				if (chip8_mapKey(e.key.keysym.sym) != -1) {
+					chip8.keyPressed = false;
+					chip8.pad[chip8_mapKey(e.key.keysym.sym)] = false;
+				}
+				break;
 			};
 		}
+		
+		/*cout << "0: " << chip8.pad[0x0] << endl;
+		cout << "1: " << chip8.pad[0x1] << endl;
+		cout << "2: " << chip8.pad[0x2] << endl;
+		cout << "3: " << chip8.pad[0x3] << endl;
+		cout << "4: " << chip8.pad[0x4] << endl;
+		cout << "5: " << chip8.pad[0x5] << endl;
+		cout << "6: " << chip8.pad[0x6] << endl;
+		cout << "7: " << chip8.pad[0x7] << endl;
+		cout << "8: " << chip8.pad[0x8] << endl;
+		cout << "9: " << chip8.pad[0x9] << endl;
+		cout << "10: " << chip8.pad[0xA] << endl;
+		cout << "11: " << chip8.pad[0xB] << endl;
+		cout << "12: " << chip8.pad[0xC] << endl;
+		cout << "13: " << chip8.pad[0xD] << endl;
+		cout << "14: " << chip8.pad[0xE] << endl;
+		cout << "15: " << chip8.pad[0xF] << endl;*/
+
 
 		// FETCH
 		currentInstruction[0] = chip8.memory[chip8.pc];		// Load current instruction from memory (1st Byte)
@@ -72,7 +104,7 @@ int main(int argc, char** argv) {
 		
 		unsigned short opcode = currentInstruction[0] << 8 | currentInstruction[1];
 
-		//cout << "PC: " << chip8.pc << endl;
+		cout << "PC: " << chip8.pc << endl;
 		
 		chip8.pc += 2;
 
@@ -86,11 +118,11 @@ int main(int argc, char** argv) {
 		unsigned char nn = (opcode & 0x00FF);
 		unsigned short nnn = (opcode & 0x0FFF);
 
-		cout << "X: " << (void *)x << endl;
-		cout << "Y: " << (void *)y << endl;
-		cout << "N: " << (void *)n << endl;
-		cout << "NN: " << (void *)nn << endl;
-		cout << "NNN: " << (void *)nnn << endl;
+		//cout << "X: " << (void *)x << endl;
+		//cout << "Y: " << (void *)y << endl;
+		//cout << "N: " << (void *)n << endl;
+		//cout << "NN: " << (void *)nn << endl;
+		//cout << "NNN: " << (void *)nnn << endl;
 
 		// DECODE
 		switch ((opcode & 0xF000) >> 12) { // EXECUTE
@@ -208,12 +240,6 @@ int main(int argc, char** argv) {
 				break;
 			}
 		}
-
-		// INPUT
-		// TODO: Use SDL to get input
-
-		// RENDERING
-		// TODO: Use SDL to render stuff
 
 		for (int i = 0; i < 64; i++) {
 			for (int j = 0; j < 32; j++) {

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include "rom.h"
 
 using namespace std;
 
@@ -136,11 +137,11 @@ void chip8_drawSprite(chip8& chip8, unsigned char x, unsigned char y, unsigned c
 }
 
 void chip8_skipKeyPressed(chip8& chip8, unsigned char x) {
-	if (chip8.currentKey == chip8.variableRegisters[x]) chip8.pc += 2;
+	if (chip8.pad[chip8.variableRegisters[x]] == true) chip8.pc += 2;
 }
 
 void chip8_skipKeyNotPressed(chip8& chip8, unsigned char x) {
-	if (chip8.currentKey != chip8.variableRegisters[x]) chip8.pc += 2;
+	if (chip8.pad[chip8.variableRegisters[x]] == false) chip8.pc += 2;
 }
 
 void chip8_setRegToDelayTimer(chip8& chip8, unsigned char x) {
@@ -189,4 +190,35 @@ void chip8_memToReg(chip8& chip8, unsigned char x) {
 	for (int i = 0; i <= regNum; i++) {
 		chip8.variableRegisters[i] = chip8.memory[chip8.iRegister + i];
 	}
+}
+
+void chip8_loadROM(chip8& chip8, rom& rom) {
+	rom.filePath.seekg(0, rom.filePath.end);
+	unsigned short rLen = (unsigned short)rom.filePath.tellg();
+	rom.filePath.seekg(0, rom.filePath.beg);
+	char* content;
+	content = new char[rLen];
+	rom.filePath.read(content, rLen);
+
+	memcpy(&chip8.memory[chip8.oldStartMem], content, rLen);
+}
+
+unsigned char chip8_mapKey(SDL_Keycode keycode) {
+	if (keycode == SDLK_1) return 0x1;
+	if (keycode == SDLK_2) return 0x2;
+	if (keycode == SDLK_3) return 0x3;
+	if (keycode == SDLK_4) return 0xC;
+	if (keycode == SDLK_q) return 0x4;
+	if (keycode == SDLK_w) return 0x5;
+	if (keycode == SDLK_e) return 0x6;
+	if (keycode == SDLK_r) return 0xD;
+	if (keycode == SDLK_a) return 0x7;
+	if (keycode == SDLK_s) return 0x8;
+	if (keycode == SDLK_d) return 0x9;
+	if (keycode == SDLK_f) return 0xE;
+	if (keycode == SDLK_z) return 0xA;
+	if (keycode == SDLK_x) return 0x0;
+	if (keycode == SDLK_c) return 0xB;
+	if (keycode == SDLK_v) return 0xF;
+	else return -1;
 }

@@ -7,6 +7,9 @@
 */
 
 #include <stack>
+#include <stdlib.h>
+#include <SDL.h>
+#include "rom.h"
 
 #define CHIP8_SPEED 700
 
@@ -45,25 +48,23 @@ struct chip8 {
 		{ 0xF0, 0x80, 0xF0, 0x80, 0x80 },	// F
 	};
 
+	bool pad[4 * 4];
+
 	bool on;
-	unsigned char currentKey;
 	bool keyPressed;
 
 	/* BACKWARDS COMPATIBILITY */
 	int oldStartMem = 512;		// To run older Chip-8 ROMs
 };
 
-void chip8_fetch(chip8& chip8);
-void chip8_decode(chip8& chip8);
-void chip8_execute(chip8& chip8);
-void chip8_getKey(chip8& chip8);
-
+void chip8_loadROM(chip8& chip8, rom& rom);
+unsigned char chip8_mapKey(SDL_Keycode keycode);
 
 // OPCODES
-void chip8_clearScr(chip8& chip8);
-void chip8_return(chip8& chip8);
-void chip8_jmp(chip8& chip8, unsigned short nnn);
-void chip8_call(chip8& chip8, unsigned short nnn);
+void chip8_clearScr(chip8& chip8);															// 00E0
+void chip8_return(chip8& chip8);															// 00EE
+void chip8_jmp(chip8& chip8, unsigned short nnn);											// 1NNN
+void chip8_call(chip8& chip8, unsigned short nnn);											// 2NNN
 void chip8_cmpRegSkip_eq(chip8& chip8, unsigned char x, unsigned char nn);
 void chip8_cmpRegSkip_neq(chip8& chip8, unsigned char x, unsigned char nn);
 void chip8_cmpRegSkip_eq_XY(chip8& chip8, unsigned char x, unsigned char y);
