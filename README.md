@@ -1,5 +1,7 @@
 # Chip-8_EMU
 
+[![CodeFactor](https://www.codefactor.io/repository/github/crazy-catzzz/chip-8_emu/badge/master)](https://www.codefactor.io/repository/github/crazy-catzzz/chip-8_emu/overview/master)
+
 Chip-8 Emulator.
 
 # Usage
